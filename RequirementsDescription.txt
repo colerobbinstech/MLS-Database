@@ -1,0 +1,153 @@
+Due Date:  Submit in Blackboard Between Monday, 4/27 @ 8:00 AM and Tuesday, 4/28 @ 2:30 PM 
+NO LATE SUBMISSIONS
+Mode:  Individual
+
+For this assignment you are to implement an MLS (multi-level secure) Database System so that you can return the result from SQL queries to an MLS database.  Information about MLS databases can be found in the Security slides.
+
+You are to write a program to implement the operations required by an MLS SQL query and execute them on preexisting files, each of which corresponds to a table in a database.  This means you will have to parse an SQL query to identify which operations it is requesting, perform the operations on the specified tables and display the results.  You must write the code to implement a select, project, Cartesian product and join operations. In addition to the data itself, the result from your query will also depend on the classification level of the user issuing the query.  Note: you are implementing some of the software that would be used by a MLS DBMS. 
+
+You may use the programming language of your choice; however, you must use the newest version of the compiler.  The exact version of the compiler you must use will be posted.  We will also post a dockerfile that will provide the newest version of the compiler for the language you choose.
+
+Input:  You will prompt the user to input a classification level, then prompt the user for an SQL query 
+    a)  the SELECT clause will always contain a list of column names and also *
+    b)  the FROM clause can contain from 1 to 3 of the tables
+    c)  the optional WHERE clause can contain join conditions and/or select conditions.
+
+The query:
+
+    There will be no other clauses in the query, i.e. no group by, no having.
+    The query be a single block query, meaning no nested subselects and no predicates. 
+    The statement will always be a query, i.e. no updates, no deletes, etc.
+    There will be no outerjoins. 
+    There will be no 'or' in the WHERE clause.
+    The FROM clause will just be a list of one or more tables (i.e., no 'Join' keyword).
+    Assume only the equality comparator will be used in select and join conditions (equi-join only).
+    The query can span one or more lines and will end with a ;
+    Assume all queries are syntactically correct.
+
+Database:  The database for your queries has 3 tables, named T1, T2, and T3. Each table will have 2 additional columns to capture the security labels.  There will a classification level associated with the primary key (KC) and also a classification level for the entire tuple (TC).  The KC may not be the same as the TC.  In addition to the 2 security label columns, Table T1 has 2 columns, named A1, A2;  Table T2 has 3 columns, named B1, B2, B3 and Table T3 has 4 columns named C1, C2, C3, C4.  The first column in each table is the primary key (e.g., A1, B1, C1). Assume all data is integer, including the classification levels and labels as described below.  You should create whatever metadata you need to process your MLS SQL query.
+
+SAMPLE DATA FILES:  
+T1:   http://cs457.cs.ua.edu/2020S/T1.txt 
+T2:   http://cs457.cs.ua.edu/2020S/T2.txt
+T3:   http://cs457.cs.ua.edu/2020S/T3.txt
+
+NOTE:  You can make whatever changes your program needs to these files to process the data - you are writing the DBMS, so do what you want to the data.
+
+Queries: Users who query the database will only be able to see those tuples at their level and below, meaning both the KC and TC must be <= the user's classification level.  The TC should always be displayed in the results. If the primary key is requested in the SELECT clause, the KC should also be displayed.
+
+When a join or Cartesian operation is required, in addition to any join condition, tuple Ti can be combined with tuple Tj if KCi=KCj  and {KCi, TCi, KCj, TCj} <= the user's classification level. Each resulting row will only have one TC value, which is the value max(TCi, TCj). Both KCi and KCj will still be included in the result if the primary keys are requested in the result.
+
+The possible classification labels and levels are:  1 <= 2 <= 3 <= 4
+
+A sample query where the first line indicates the user has the highest clearance:
+        4
+        SELECT C1, C2
+        FROM T1, T3
+        WHERE A1=C4 and C2=196;
+
+Security label as a select condition: Users can optionally specify a security label for the TC as a select condition in the where clause.   For example, a query for a user at level 4 can include WHERE TC=3.  In this case, only the tuples with a TC at classification level 3 should be displayed. If the requested classification label is greater than the user's classification level (for example, if a user at level 1 specifies WHERE TC=2), an error should be printed and no result given.  Also, only the tuples resulting from a join or Cartesian product that have a TC equal to the specified value should be included in the result.
+
+A sample query where the first line indicates the user has clearance level 3:
+        3
+        SELECT C1, C2
+        FROM T3
+        WHERE C3=50 and TC=2;
+
+Task 1:  You will need to parse the query to determine what columns are needed, which tables, which conditions, etc.
+
+Task 2:  You will need to implement each operation in the query, e.g. implement a Cartesian product, select operation, project operation and join operation. 
+
+Output:  You will need to display the results from your query in table format with column names and each tuple in a row.  Always display the TC in any query result and it should appear as the last column in the table. If the query requires the primary key in the result, display the KC column as the column immediately to the right of the primary key column. Again, the result of a join or a Cartesian product will have only one TC column. Rename the columns from a Cartesian product or join that are have the same name.
+
+Sample queries and output:
+
+        4   
+        SELECT C2
+        FROM T3
+        WHERE C3=50; 
+
+        C2         TC
+---------- ----------
+        199         2
+          29         2  
+          46         4
+          72         1      
+
+        3   
+        SELECT C2
+        FROM T3
+        WHERE C3=50; 
+
+        C2         TC
+---------- ----------
+        199         2
+          29         2  
+          72         1          
+
+   
+
+        2
+        SELECT C2 FROM T3 WHERE C3=50;
+
+         C2         TC
+---------- ----------
+        199         2
+          29         2      
+          72         1
+
+ 
+
+        3
+        SELECT C2
+        FROM T3
+        WHERE C3=50 and TC=2;
+
+         C2         TC
+---------- ----------
+        199         2
+          29         2  
+
+ 
+
+        3
+        SELECT C2
+        FROM T3
+        WHERE C3=50 and TC=4; 
+
+Error:  Security Level Violation
+
+        3
+        SELECT * FROM T2
+        WHERE B2=54;
+
+           B1        KC         B2         B3         TC
+   ---------- ---------- ---------- ---------- ----------
+        114           2           54           65           2
+          73           1           54             5           3
+          63           3           54         123           3  
+
+ 
+
+        4
+        SELECT C1, C3
+        FROM T1, T3
+        WHERE A1=C4 and A2=425;
+
+         C1          KC         C3          TC
+  ---------- ---------- ---------- ----------
+        31            2         271             2
+      251            2         292             4
+
+        4
+        SELECT *
+        FROM T1, T3
+        WHERE A1=C4 and A2=425;    
+
+ 
+     A1       T1.KC        A2         C1        T3.KC        C2          C3         C4        TC           
+---------- ----------- ---------- ----------- ---------- --------- ---------- ---------- --------
+     256            2          425            31         2          14         271         256          2
+     256            2          425          251         2         171        292         256          4 
+
+
